@@ -1,0 +1,6 @@
+import {NextResponse} from "next/server";
+import {userId} from "../../../lib/server";
+import pdfParse from "pdf-parse/lib/pdf-parse.js";
+import mammoth from "mammoth";
+export const runtime="nodejs";
+export async function POST(req:Request){try{if(!await userId(req))return NextResponse.json({error:"AUTH"},{status:401});if(Number(req.headers.get("content-length")||0)>3500000)return NextResponse.json({error:"SIZE"},{status:413});const file=(await req.formData()).get("file");if(!(file instanceof File)||file.size>3000000)return NextResponse.json({error:"SIZE"},{status:413});const name=file.name.toLowerCase();const buffer=Buffer.from(await file.arrayBuffer());let text="";if(name.endsWith(".txt")||name.endsWith(".md"))text=buffer.toString("utf8");else if(name.endsWith(".pdf"))text=(await pdfParse(buffer,{max:30})).text;else if(name.endsWith(".docx"))text=(await mammoth.extractRawText({buffer})).value;else return NextResponse.json({error:"FORMAT"},{status:400});if(!text.trim())return NextResponse.json({error:"EMPTY"},{status:422});return NextResponse.json({text:text.slice(0,35000),truncated:text.length>35000});}catch{return NextResponse.json({error:"FORMAT"},{status:422});}}

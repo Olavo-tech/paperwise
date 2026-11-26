@@ -1,0 +1,1 @@
+declare module "pdf-parse/lib/pdf-parse.js" { const parse:(b:Buffer,options?:{max?:number})=>Promise<{text:string}>;export default parse; }

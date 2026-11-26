@@ -1,0 +1,21 @@
+import type {Report,Details,Figure,Lang} from "./types";
+const labels={pt:{report:"Trabalho acadêmico",refs:"REFERÊNCIAS",fig:"FIGURAS",teacher:"Professor(a)",subject:"Disciplina"},en:{report:"Academic report",refs:"REFERENCES",fig:"FIGURES",teacher:"Teacher",subject:"Subject"},es:{report:"Trabajo académico",refs:"REFERENCIAS",fig:"FIGURAS",teacher:"Docente",subject:"Asignatura"}};
+function download(blob:Blob,name:string){const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);}
+function safeName(s:string){return s.normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-zA-Z0-9_-]+/g,"-").slice(0,70)||"paperwise";}
+export async function docxExport(r:Report,d:Details,figures:Figure[],lang:Lang){
+const {Document,Packer,Paragraph,TextRun,AlignmentType,PageBreak,ImageRun}=await import("docx");const l=labels[lang];
+const p=(text:string,opts:{bold?:boolean;center?:boolean;indent?:boolean;after?:number}={})=>new Paragraph({alignment:opts.center?AlignmentType.CENTER:AlignmentType.JUSTIFIED,spacing:{line:360,after:opts.after??120},indent:opts.indent?{firstLine:709}:undefined,children:[new TextRun({text,font:"Times New Roman",size:24,bold:opts.bold})]});
+const children=[p(d.institution,{center:true,bold:true,after:900}),p(d.authors,{center:true,after:1800}),p(r.title.toUpperCase(),{center:true,bold:true,after:2500}),p(d.city,{center:true}),p(d.year,{center:true}),new Paragraph({children:[new PageBreak()]}),p(d.authors,{center:true,after:900}),p(r.title,{center:true,bold:true,after:800}),p(l.report+" — "+d.subject),p(l.teacher+": "+d.teacher),p(d.institution),p(d.city+" — "+d.year,{center:true}),new Paragraph({children:[new PageBreak()]})];
+for(const s of r.sections){children.push(p(s.heading,{bold:true,after:240}));for(const t of s.paragraphs)children.push(p(t,{indent:true}));}
+if(r.references.length){children.push(p(l.refs,{bold:true}));for(const ref of r.references)children.push(p(ref));}
+if(figures.length){children.push(p(l.fig,{bold:true}));for(const f of figures){const scale=Math.min(500/f.width,350/f.height,1);children.push(new Paragraph({alignment:AlignmentType.CENTER,children:[new ImageRun({type:f.type,data:Uint8Array.from(atob(f.data.split(",")[1]),c=>c.charCodeAt(0)),transformation:{width:Math.round(f.width*scale),height:Math.round(f.height*scale)}})]}),p(f.caption,{center:true}));}}
+const doc=new Document({sections:[{properties:{page:{size:{width:11906,height:16838},margin:{top:1701,left:1701,bottom:1134,right:1134}}},children}]});download(await Packer.toBlob(doc),safeName(r.title)+".docx");}
+export async function pdfExport(r:Report,d:Details,figures:Figure[],lang:Lang){
+const {jsPDF}=await import("jspdf");const doc=new jsPDF({format:"a4",unit:"mm"});const l=labels[lang];let y=30;doc.setFont("times","normal");doc.setFontSize(12);
+const center=(s:string,at:number,bold=false)=>{doc.setFont("times",bold?"bold":"normal");doc.text(doc.splitTextToSize(s,150),105,at,{align:"center"});};
+center(d.institution,30,true);center(d.authors,65);center(r.title.toUpperCase(),125,true);center(d.city,255);center(d.year,263);doc.addPage();center(d.authors,35);center(r.title,90,true);center(l.report+" — "+d.subject,140);center(l.teacher+": "+d.teacher,155);center(d.institution,170);center(d.city+" — "+d.year,260);doc.addPage();
+const page=()=>{doc.addPage();y=30;};const write=(s:string,bold=false,indent=false)=>{doc.setFont("times",bold?"bold":"normal");const lines=doc.splitTextToSize(s,160-(indent?12.5:0)) as string[];for(let i=0;i<lines.length;i++){if(y>270)page();doc.text(lines[i],30+(indent&&i===0?12.5:0),y);y+=6.35;}y+=3;};
+for(const s of r.sections){write(s.heading,true);for(const t of s.paragraphs)write(t,false,true);}
+if(r.references.length){write(l.refs,true);for(const ref of r.references)write(ref);}
+if(figures.length){write(l.fig,true);for(const f of figures){const scale=Math.min(150/f.width,115/f.height);const w=f.width*scale,h=f.height*scale;if(y+h+15>270)page();doc.addImage(f.data,f.type==="png"?"PNG":"JPEG",(210-w)/2,y,w,h);y+=h+6;write(f.caption);}}
+for(let i=3;i<=doc.getNumberOfPages();i++){doc.setPage(i);doc.setFontSize(10);doc.text(String(i-1),190,20,{align:"right"});}doc.save(safeName(r.title)+".pdf");}
