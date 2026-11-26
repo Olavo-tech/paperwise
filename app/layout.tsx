@@ -1,5 +1,6 @@
 import type { Metadata,Viewport } from "next";
 import "./globals.css";
-export const metadata:Metadata={title:"Paperwise — Seu trabalho, pronto mais rápido",description:"Gere rascunhos acadêmicos estruturados e formatados em ABNT a partir de um único prompt.",manifest:"/manifest.webmanifest",icons:{icon:"/icon.svg"}};
+const base="https://paperwise-six.vercel.app";
+export const metadata:Metadata={metadataBase:new URL(base),title:{default:"Paperwise — Gerador de relatórios ABNT com IA",template:"%s | Paperwise"},description:"Organize enunciados, crie rascunhos de relatórios acadêmicos com inteligência artificial e exporte documentos orientados à ABNT em PDF e Word.",applicationName:"Paperwise",manifest:"/manifest.webmanifest",icons:{icon:"/icon.svg"},robots:{index:true,follow:true},openGraph:{type:"website",locale:"pt_BR",siteName:"Paperwise",title:"Paperwise — Relatórios ABNT com IA",description:"Do enunciado ao rascunho acadêmico, com personalização e exportação em PDF e Word."},twitter:{card:"summary",title:"Paperwise — Relatórios ABNT com IA",description:"Organize e formate seus relatórios acadêmicos."}};
 export const viewport:Viewport={themeColor:"#111a0e",width:"device-width",initialScale:1};
-export default function RootLayout({children}:{children:React.ReactNode}){return <html lang="pt-BR"><body>{children}</body></html>;}
+export default function RootLayout({children}:{children:React.ReactNode}){const schema={"@context":"https://schema.org","@type":"WebSite",name:"Paperwise",url:base,inLanguage:"pt-BR"};return <html lang="pt-BR"><body><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(schema).replace(/</g,"\\u003c")}}/>{children}</body></html>;}
