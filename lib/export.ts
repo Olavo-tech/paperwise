@@ -44,7 +44,7 @@ export async function docxExport(r:Report,d:Details,figures:Figure[],lang:Lang,f
  const styles={default:{document:{run:{font:"Times New Roman",size:24,color:"000000"},paragraph:{spacing:{line:m.line,after:0}}},heading1:{run:{font:"Times New Roman",size:24,bold:true,color:"000000"}},heading2:{run:{font:"Times New Roman",size:24,bold:true,color:"000000"}},heading3:{run:{font:"Times New Roman",size:24,bold:true,color:"000000"}}}};
  const doc=new Document({title:m.title,creator:"Paperwise",styles,features:{updateFields:true},sections:[{properties:{page:{...base,margin:{...base.margin,footer:1134}}},footers:{default:coverFooter},children:cover},{properties:{type:SectionType.NEXT_PAGE,page:{...base,margin:{...base.margin,footer:1134},pageNumbers:{start:1}}},footers:{default:coverFooter},children:titlePage},{properties:{type:SectionType.NEXT_PAGE,page:base},footers:{default:blankFooter},children:pre},{properties:{type:SectionType.NEXT_PAGE,page:base},headers:{default:header},footers:{default:blankFooter},children:body}]});download(await Packer.toBlob(doc),safeName(filename)+".docx");
 }
-export async function pdfExport(r:Report,d:Details,figures:Figure[],lang:Lang,filename=r.title){
+export async function pdfExport(r:Report,d:Details,figures:Figure[],lang:Lang,filename=r.title,preview=false){
  const {jsPDF}=await import("jspdf");const doc=new jsPDF({format:"a4",unit:"mm"});const m=model(r,d,lang),l=m.l;
  const left=30,right=190,width=160,top=30,bottom=277,cx=110,lh=m.technical?4.24:6.35;let y=top;const entries:{title:string;page:number;level:number}[]=[];
  doc.setProperties({title:m.title,creator:"Paperwise"});const font=(bold=false,size=12)=>{doc.setFont("times",bold?"bold":"normal");doc.setFontSize(size);doc.setTextColor(0,0,0);};
@@ -62,5 +62,5 @@ export async function pdfExport(r:Report,d:Details,figures:Figure[],lang:Lang,fi
  heading(l.refs,1,false,true);for(const ref of m.refs)write(ref,{simple:true,after:4.24});
  if(figures.some((_,i)=>!assigned.has(i))){heading(l.appendix,1,false,true);figures.forEach((f,i)=>{if(!assigned.has(i))pdfFigure(f,i);});}
  for(let i=0;i<tocPages;i++){doc.setPage(tocStart+i);center(l.summary,34,true);let yy=49;for(const item of entries.slice(i*16,(i+1)*16)){font(item.level===1);const xx=left+(item.level-1)*5;const p=String(item.page);const lines=doc.splitTextToSize(item.title,right-xx-15) as string[];for(let j=0;j<lines.length;j++){doc.text(lines[j],xx,yy);if(j===lines.length-1){const end=xx+doc.getTextWidth(lines[j])+2;const limit=right-doc.getTextWidth(p)-2;const count=Math.max(0,Math.floor((limit-end)/doc.getTextWidth(".")));if(count)doc.text(".".repeat(count),end,yy);doc.text(p,right,yy,{align:"right"});}yy+=5;}yy+=2;}}
- for(let i=firstBody;i<=doc.getNumberOfPages();i++){doc.setPage(i);font(false,10);doc.text(String(i-1),right,20,{align:"right"});}doc.save(safeName(filename)+".pdf");
+ for(let i=firstBody;i<=doc.getNumberOfPages();i++){doc.setPage(i);font(false,10);doc.text(String(i-1),right,20,{align:"right"});}if(preview)return doc.output("blob");doc.save(safeName(filename)+".pdf");
 }
