@@ -34,3 +34,5 @@ footer .footer-disclaimer{max-width:none;white-space:nowrap;font-size:10px;font-
 
 /* Footer layout is independent of the main navigation. */
 main > footer{display:flex;flex-direction:column;align-items:center;justify-content:center;width:100%;max-width:none;margin-inline:auto;gap:10px;text-align:center}main > footer .footer-disclaimer{display:block;width:100%;max-width:none;text-align:center;white-space:nowrap;margin:0 auto}main > footer > nav{position:static;display:flex;justify-content:center!important;align-items:center;width:100%;max-width:none;min-height:0;margin:0 auto!important;padding:0;gap:16px;animation:none;transform:none;text-align:center}main > footer > nav a{flex:0 0 auto}
+
+.credit-balance.low,.credit-low{color:#f0c785!important}.credit-history{max-height:85vh;overflow:auto}.credit-history ul{padding:0;list-style:none}.credit-history li{display:flex;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--line);font-size:12px}

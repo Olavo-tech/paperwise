@@ -1,0 +1,3 @@
+import {NextResponse} from "next/server";import {admin,userId,access} from "../../../lib/server";
+export const dynamic="force-dynamic";
+export async function GET(req:Request){try{const id=await userId(req);if(!id)return NextResponse.json({error:"AUTH"},{status:401});const balance=await access(id);const {data,error}=await admin().from("paperwise_credit_operations").select("stage,cost,status,created_at").eq("user_id",id).gt("cost",0).order("created_at",{ascending:false}).limit(50);if(error)throw error;const now=new Date();return NextResponse.json({...balance,renewal:new Date(Date.UTC(now.getUTCFullYear(),now.getUTCMonth()+1,1)).toISOString(),history:data},{headers:{"Cache-Control":"no-store"}});}catch{return NextResponse.json({error:"QUOTA"},{status:503});}}
